@@ -1,0 +1,93 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json  # Optional: Include if you use yarn/pnpm exclusively
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+config/secrets/
+credentials.json
+service-account.json
+
+# Build and distribution directories
+dist/
+build/
+out/
+coverage/
+*.min.js
+*.bundle.js
+*.map
+
+# Logs
+logs/
+*.log
+*.log.*
+npm.log
+yarn.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testing and CI/CD
+coverage/
+.nyc_output/
+.jest/
+.test/
+tests/__snapshots__/
+*.test.js.snap
+
+# Production-specific
+/public/uploads/  # User-uploaded files (e.g., Express apps)
+/public/storage/
+/dumps/
+/backups/
+
+# Dependency caches
+.eslintcache
+.prettierrc.cache
+.tscache
+node_repl_history
+.cache/
+webpack.cache/
+
+# Docker and deployment
+Dockerfile.local
+docker-compose.local.yml
+*.dockerignore
+
+# Miscellaneous
+*.pid
+*.seed
+*.rdb
+dump.rdb  # Redis dumps
+*.bak
+*.gho
+
+# OS-specific
+*.DS_Store
+Thumbs.db
