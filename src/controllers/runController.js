@@ -1,6 +1,6 @@
 const Run = require('../models/Run');
 const { validationResult } = require('express-validator');
-const { captureTerritories } = require('../utils/territoryUtils');
+const { captureTerritories, applyTerritoryDecay } = require('../utils/territoryUtils');
 
 // Create a new run
 exports.createRun = async (req, res) => {
@@ -10,27 +10,32 @@ exports.createRun = async (req, res) => {
   const { distance, path, startTime, endTime, calories, city } = req.body;
 
   try {
-    // Create run in MongoDB
-    Run.create({
+    const run = await Run.create({
       user: req.user.id,
       distance,
       path,
       startTime,
       endTime,
       calories
-    }).then(run => {
-      // Send response immediately
-      res.status(201).json({ run });
-
-      // Capture territories asynchronously (non-blocking)
-      captureTerritories(req.user.id, city || 'Unknown', path)
-        .catch(err => console.error('Territory capture failed:', err));
     });
+
+    // Respond immediately
+    res.status(201).json({ run });
+
+    // Async operations: territory capture + decay
+    captureTerritories(req.user.id, city || 'Unknown', path)
+      .catch(err => console.error('Territory capture failed:', err));
+
+    // Apply decay asynchronously
+    applyTerritoryDecay(city || 'Unknown')
+      .catch(err => console.error('Territory decay failed:', err));
+
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // Get all runs of a user
 exports.getMyRuns = async (req, res) => {

@@ -1,32 +1,56 @@
 const Territory = require('../models/Territory');
 const Reward = require('../models/Reward');
 
+const DECAY_DAYS = 7;        // start decaying after 7 days
+const DECAY_RATE = 10;       // % per day
+
 /**
- * Converts a latitude/longitude point to a unique 1km² grid ID
+ * Apply decay to all territories for a city
  */
-const getGridId = (lat, lng) => {
-  const latGrid = Math.floor(lat / 0.009);
-  const lngGrid = Math.floor(lng / 0.011);
-  return `${latGrid}_${lngGrid}`;
+const applyTerritoryDecay = async (city) => {
+  const DECAY_PERCENT = 20; // Reduce coverage by 20%
+  const now = new Date();
+  const threshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+
+  // Find territories to decay
+  const territories = await Territory.find({
+    city,
+    lastCapturedAt: { $lt: threshold },
+    coverage: { $gt: 0 },
+  });
+
+  const bulkOps = territories.map(t => {
+    const newCoverage = Math.max(0, t.coverage - DECAY_PERCENT);
+    return {
+      updateOne: {
+        filter: { _id: t._id },
+        update: { coverage: newCoverage, user: newCoverage === 0 ? null : t.user },
+      },
+    };
+  });
+
+  if (bulkOps.length > 0) {
+    await Territory.bulkWrite(bulkOps);
+    console.log(`Territory decay applied for city ${city}: ${bulkOps.length} territories updated.`);
+  }
 };
 
 /**
- * Capture territories based on run path
+ * Capture or update territories based on run path
  */
 const captureTerritories = async (userId, city, path) => {
   if (!path || path.length === 0) return;
 
-  // Map gridId => number of points touched
   const gridPointsMap = {};
+  const MAX_POINTS = 5;
+
   path.forEach(point => {
-    const gridId = getGridId(point.lat, point.lng);
+    const latGrid = Math.floor(point.lat / 0.009);
+    const lngGrid = Math.floor(point.lng / 0.011);
+    const gridId = `${latGrid}_${lngGrid}`;
     gridPointsMap[gridId] = (gridPointsMap[gridId] || 0) + 1;
   });
 
-  // MAX_POINTS per grid to calculate coverage
-  const MAX_POINTS = 5;
-
-  // ✅ Bulk operations go here
   const bulkOps = Object.keys(gridPointsMap).map(gridId => {
     const coverage = Math.min(100, (gridPointsMap[gridId] / MAX_POINTS) * 100);
 
@@ -50,25 +74,26 @@ const captureTerritories = async (userId, city, path) => {
     for (const gridId of Object.keys(gridPointsMap)) {
       const coverage = Math.min(100, (gridPointsMap[gridId] / MAX_POINTS) * 100);
       if (coverage >= 80) {
-        await Territory.findOneAndUpdate(
+        const territory = await Territory.findOneAndUpdate(
           { city, gridId },
           { user: userId, coverage, lastCapturedAt: new Date() },
           { new: true }
         );
 
-        // Award Raj Points
-        await Reward.findOneAndUpdate(
-          { user: userId },
-          {
-            $inc: { points: 10 },
-            $push: { history: { type: 'capture', amount: 10 } },
-            $set: { lastUpdated: new Date() }
-          },
-          { upsert: true }
-        );
+        if (territory) {
+          await Reward.findOneAndUpdate(
+            { user: userId },
+            {
+              $inc: { points: 10 },
+              $push: { history: { type: 'capture', amount: 10 } },
+              $set: { lastUpdated: new Date() }
+            },
+            { upsert: true }
+          );
+        }
       }
     }
   }
 };
 
-module.exports = { captureTerritories };
+module.exports = { captureTerritories, applyTerritoryDecay };

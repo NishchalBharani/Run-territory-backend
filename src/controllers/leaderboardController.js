@@ -1,4 +1,3 @@
-// const redisClient = require('../utils/cache');
 
 exports.getLeaderboard = async (req, res) => {
   try {
@@ -33,9 +32,6 @@ exports.getLeaderboard = async (req, res) => {
         }
       }
     ]);
-
-    // Cache for 30s (hot leaderboard)
-    // await redisClient.setEx(`leaderboard:${city}`, 30, JSON.stringify(leaderboard));
 
     res.json({ leaderboard });
   } catch (err) {

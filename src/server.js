@@ -8,6 +8,7 @@ const runRoutes = require('./routes/runs');
 const leaderboardRoutes = require('./routes/leaderboard');
 const rewardRoutes = require('./routes/rewards');
 const sosRoutes = require('./routes/sos');
+const territoriesRoutes = require('./routes/territories');
 
 // Connect to MongoDB
 connectDB();
@@ -31,6 +32,7 @@ app.use('/api/runs', runRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/sos', sosRoutes);
+app.use('/api/territories', territoriesRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
